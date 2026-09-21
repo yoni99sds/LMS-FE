@@ -123,7 +123,7 @@ const StudentProfilePage = () => {
     `${student.firstName.charAt(0)}${student.lastName.charAt(0)}`.toUpperCase();
 
   return (
-    <InstructorLayout>
+
       <div className="space-y-8 pb-10">
 
         {/* =========================
@@ -556,7 +556,7 @@ const StudentProfilePage = () => {
         </div>
 
       </div>
-    </InstructorLayout>
+  
   );
 };
 

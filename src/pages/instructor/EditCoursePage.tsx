@@ -145,7 +145,7 @@ const EditCoursePage = () => {
   };
 
   return (
-    <InstructorLayout>
+   
       <div className="space-y-8 pb-10">
 
         {/* HEADER */}
@@ -567,7 +567,7 @@ const EditCoursePage = () => {
         </div>
 
       </div>
-    </InstructorLayout>
+   
   );
 };
 
