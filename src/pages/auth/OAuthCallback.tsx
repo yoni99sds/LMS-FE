@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import {
+  useNavigate,
+  useSearchParams,
+} from "react-router-dom";
 
 const API_URL =
   import.meta.env.VITE_API_URL || "/api/v1";
@@ -13,83 +16,60 @@ const OAuthCallback = () => {
   useEffect(() => {
     const authenticateUser = async () => {
       try {
-        const role = params.get("role");
+        /*
+        |--------------------------------------------------------------------------
+        | GOOGLE OAUTH CALLBACK
+        |--------------------------------------------------------------------------
+        */
 
-        console.log(
-          "=================================================="
-        );
+        const roleFromUrl = params.get("role");
 
-        console.log(
-          "🔐 GOOGLE OAUTH FRONTEND CALLBACK"
-        );
-
-        console.log(
-          "Role:",
-          role
-        );
-
-        console.log(
-          "API URL:",
-          API_URL
-        );
-
-        console.log(
-          "=================================================="
-        );
-
-        // ====================================================
-        // CHECK ROLE
-        // ====================================================
-
-        if (!role) {
-          console.error(
-            "❌ OAuth role is missing"
-          );
-
-          navigate(
-            "/login?error=oauth_failed",
-            {
-              replace: true,
-            }
-          );
-
-          return;
-        }
-
-        // ====================================================
-        // GET CURRENT USER
-        // ====================================================
-
-        console.log(
-          "🔎 Requesting authenticated user..."
-        );
+        /*
+        |--------------------------------------------------------------------------
+        | GET AUTHENTICATED USER
+        |--------------------------------------------------------------------------
+        |
+        | We do NOT trust the role in the URL for authentication.
+        |
+        | The backend has already placed the JWT inside the
+        | httpOnly accessToken cookie.
+        |
+        | /users/me reads that cookie and returns the actual
+        | authenticated user.
+        |
+        */
 
         const response = await fetch(
           `${API_URL}/users/me`,
           {
             method: "GET",
 
+            /*
+             * Allows the browser to send the
+             * httpOnly authentication cookie.
+             */
             credentials: "include",
 
             headers: {
-              Accept:
-                "application/json",
+              Accept: "application/json",
             },
           }
         );
 
-        console.log(
-          "📡 /users/me status:",
-          response.status
-        );
+        /*
+        |--------------------------------------------------------------------------
+        | READ RESPONSE
+        |--------------------------------------------------------------------------
+        */
 
         const responseText =
           await response.text();
 
-        console.log(
-          "📡 /users/me response:",
-          responseText
-        );
+        /*
+        |--------------------------------------------------------------------------
+        | CHECK RESPONSE
+        |--------------------------------------------------------------------------
+        */
 
         if (!response.ok) {
           throw new Error(
@@ -97,11 +77,13 @@ const OAuthCallback = () => {
           );
         }
 
-        // ====================================================
-        // PARSE RESPONSE
-        // ====================================================
+        /*
+        |--------------------------------------------------------------------------
+        | PARSE JSON
+        |--------------------------------------------------------------------------
+        */
 
-        let result;
+        let result: unknown;
 
         try {
           result =
@@ -112,110 +94,158 @@ const OAuthCallback = () => {
           );
         }
 
-        console.log(
-          "✅ User response:",
-          result
-        );
+        /*
+        |--------------------------------------------------------------------------
+        | GET USER FROM RESPONSE
+        |--------------------------------------------------------------------------
+        |
+        | Depending on your controller response structure,
+        | the user could be located in:
+        |
+        | data.user
+        | data
+        | user
+        |
+        */
 
-        // ====================================================
-        // GET USER
-        // ====================================================
+        const responseData =
+          result as {
+            data?: {
+              user?: {
+                role?: string;
+                email?: string;
+                _id?: string;
+                id?: string;
+              };
+              role?: string;
+              email?: string;
+              _id?: string;
+              id?: string;
+            };
+            user?: {
+              role?: string;
+              email?: string;
+              _id?: string;
+              id?: string;
+            };
+          };
 
         const user =
-          result?.data?.user ||
-          result?.data ||
-          result?.user;
+          responseData?.data?.user ||
+          responseData?.data ||
+          responseData?.user;
+
+        /*
+        |--------------------------------------------------------------------------
+        | CHECK USER
+        |--------------------------------------------------------------------------
+        */
 
         if (!user) {
           throw new Error(
-            "User information was not returned."
+            "User information was not returned by the server."
           );
         }
 
-        console.log(
-          "✅ AUTHENTICATED USER:",
-          user
-        );
+        /*
+        |--------------------------------------------------------------------------
+        | DETERMINE AUTHENTICATED ROLE
+        |--------------------------------------------------------------------------
+        |
+        | IMPORTANT:
+        |
+        | We use user.role returned by the backend.
+        |
+        | The role query parameter is only a fallback.
+        |
+        */
 
-        // ====================================================
-        // DETERMINE ROLE
-        // ====================================================
+        const authenticatedRole = (
+          user.role ||
+          roleFromUrl ||
+          ""
+        )
+          .toString()
+          .trim()
+          .toLowerCase();
 
-        const authenticatedRole =
-          user.role || role;
+        /*
+        |--------------------------------------------------------------------------
+        | STUDENT
+        |--------------------------------------------------------------------------
+        */
 
-        console.log(
-          "👤 Authenticated role:",
-          authenticatedRole
-        );
-
-        // ====================================================
-        // REDIRECT
-        // ====================================================
-
-        switch (
-          authenticatedRole.toLowerCase()
+        if (
+          authenticatedRole ===
+          "student"
         ) {
-          case "student":
-            console.log(
-              "🎓 Redirecting to student dashboard"
-            );
+          navigate(
+            "/dashboard/student",
+            {
+              replace: true,
+            }
+          );
 
-            navigate(
-              "/dashboard/student",
-              {
-                replace: true,
-              }
-            );
-
-            break;
-
-          case "admin":
-            console.log(
-              "👑 Redirecting to admin dashboard"
-            );
-
-            navigate(
-              "/admin",
-              {
-                replace: true,
-              }
-            );
-
-            break;
-
-          case "instructor":
-            console.log(
-              "👨‍🏫 Redirecting to instructor dashboard"
-            );
-
-            navigate(
-              "/instructor",
-              {
-                replace: true,
-              }
-            );
-
-            break;
-
-          default:
-            console.error(
-              "❌ Unknown role:",
-              authenticatedRole
-            );
-
-            navigate(
-              "/",
-              {
-                replace: true,
-              }
-            );
+          return;
         }
-      } catch (err) {
-        console.error(
-          "❌ OAuth callback error:",
-          err
+
+        /*
+        |--------------------------------------------------------------------------
+        | ADMIN
+        |--------------------------------------------------------------------------
+        */
+
+        if (
+          authenticatedRole ===
+          "admin"
+        ) {
+          navigate(
+            "/admin",
+            {
+              replace: true,
+            }
+          );
+
+          return;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | INSTRUCTOR
+        |--------------------------------------------------------------------------
+        */
+
+        if (
+          authenticatedRole ===
+          "instructor"
+        ) {
+          navigate(
+            "/instructor/dashboard",
+            {
+              replace: true,
+            }
+          );
+
+          return;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | UNKNOWN ROLE
+        |--------------------------------------------------------------------------
+        */
+
+        throw new Error(
+          `Unknown user role: ${
+            user.role || "missing"
+          }`
         );
+      } catch (err) {
+        /*
+        |--------------------------------------------------------------------------
+        | ERROR HANDLING
+        |--------------------------------------------------------------------------
+        */
 
         const message =
           err instanceof Error
@@ -224,6 +254,12 @@ const OAuthCallback = () => {
 
         setError(message);
 
+        /*
+        |--------------------------------------------------------------------------
+        | REDIRECT TO LOGIN
+        |--------------------------------------------------------------------------
+        */
+
         setTimeout(() => {
           navigate(
             "/login?error=oauth_failed",
@@ -231,26 +267,28 @@ const OAuthCallback = () => {
               replace: true,
             }
           );
-        }, 2000);
+        }, 3000);
       }
     };
 
     authenticateUser();
   }, [navigate, params]);
 
-  // ==========================================================
-  // ERROR
-  // ==========================================================
+  /*
+  |--------------------------------------------------------------------------
+  | ERROR UI
+  |--------------------------------------------------------------------------
+  */
 
   if (error) {
     return (
       <div className="flex min-h-screen items-center justify-center px-4">
-        <div className="max-w-md text-center">
+        <div className="w-full max-w-md text-center">
           <h2 className="mb-3 text-lg font-semibold">
             Authentication failed
           </h2>
 
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground break-words">
             {error}
           </p>
 
@@ -262,9 +300,11 @@ const OAuthCallback = () => {
     );
   }
 
-  // ==========================================================
-  // LOADING
-  // ==========================================================
+  /*
+  |--------------------------------------------------------------------------
+  | LOADING UI
+  |--------------------------------------------------------------------------
+  */
 
   return (
     <div className="flex min-h-screen items-center justify-center">
@@ -275,6 +315,10 @@ const OAuthCallback = () => {
 
         <p className="text-sm text-muted-foreground">
           Logging you in...
+        </p>
+
+        <p className="mt-2 text-xs text-muted-foreground">
+          Please wait while we verify your account.
         </p>
       </div>
     </div>
