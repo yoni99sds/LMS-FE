@@ -2,8 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 const API_URL =
-  import.meta.env.VITE_API_URL ||
-  "http://localhost:5000/api/v1";
+  import.meta.env.VITE_API_URL || "/api/v1";
 
 const OAuthCallback = () => {
   const [params] = useSearchParams();
@@ -25,7 +24,7 @@ const OAuthCallback = () => {
         );
 
         console.log(
-          "Role from URL:",
+          "Role:",
           role
         );
 
@@ -44,7 +43,7 @@ const OAuthCallback = () => {
 
         if (!role) {
           console.error(
-            "❌ No role returned from OAuth callback"
+            "❌ OAuth role is missing"
           );
 
           navigate(
@@ -58,7 +57,7 @@ const OAuthCallback = () => {
         }
 
         // ====================================================
-        // GET AUTHENTICATED USER
+        // GET CURRENT USER
         // ====================================================
 
         console.log(
@@ -70,9 +69,6 @@ const OAuthCallback = () => {
           {
             method: "GET",
 
-            // VERY IMPORTANT:
-            // This allows the browser to send the
-            // httpOnly accessToken cookie to Render.
             credentials: "include",
 
             headers: {
@@ -87,15 +83,6 @@ const OAuthCallback = () => {
           response.status
         );
 
-        console.log(
-          "📡 /users/me response OK:",
-          response.ok
-        );
-
-        // ====================================================
-        // READ RESPONSE
-        // ====================================================
-
         const responseText =
           await response.text();
 
@@ -106,7 +93,7 @@ const OAuthCallback = () => {
 
         if (!response.ok) {
           throw new Error(
-            `Authentication failed with status ${response.status}: ${responseText}`
+            `Authentication failed (${response.status}): ${responseText}`
           );
         }
 
@@ -121,12 +108,12 @@ const OAuthCallback = () => {
             JSON.parse(responseText);
         } catch {
           throw new Error(
-            "Backend returned an invalid JSON response."
+            "Invalid JSON returned by /users/me"
           );
         }
 
         console.log(
-          "✅ /users/me parsed response:",
+          "✅ User response:",
           result
         );
 
@@ -140,12 +127,8 @@ const OAuthCallback = () => {
           result?.user;
 
         if (!user) {
-          console.error(
-            "❌ User information was not returned"
-          );
-
           throw new Error(
-            "User information was not returned by the backend."
+            "User information was not returned."
           );
         }
 
@@ -175,7 +158,7 @@ const OAuthCallback = () => {
         ) {
           case "student":
             console.log(
-              "🎓 Redirecting to student dashboard..."
+              "🎓 Redirecting to student dashboard"
             );
 
             navigate(
@@ -189,7 +172,7 @@ const OAuthCallback = () => {
 
           case "admin":
             console.log(
-              "👑 Redirecting to admin dashboard..."
+              "👑 Redirecting to admin dashboard"
             );
 
             navigate(
@@ -203,7 +186,7 @@ const OAuthCallback = () => {
 
           case "instructor":
             console.log(
-              "👨‍🏫 Redirecting to instructor dashboard..."
+              "👨‍🏫 Redirecting to instructor dashboard"
             );
 
             navigate(
@@ -217,7 +200,7 @@ const OAuthCallback = () => {
 
           default:
             console.error(
-              "❌ Unknown user role:",
+              "❌ Unknown role:",
               authenticatedRole
             );
 
@@ -230,7 +213,7 @@ const OAuthCallback = () => {
         }
       } catch (err) {
         console.error(
-          "❌ Google OAuth callback error:",
+          "❌ OAuth callback error:",
           err
         );
 
@@ -241,8 +224,6 @@ const OAuthCallback = () => {
 
         setError(message);
 
-        // Give the browser console time to show
-        // the diagnostic information before redirecting.
         setTimeout(() => {
           navigate(
             "/login?error=oauth_failed",
@@ -250,7 +231,7 @@ const OAuthCallback = () => {
               replace: true,
             }
           );
-        }, 1500);
+        }, 2000);
       }
     };
 
@@ -258,23 +239,23 @@ const OAuthCallback = () => {
   }, [navigate, params]);
 
   // ==========================================================
-  // ERROR UI
+  // ERROR
   // ==========================================================
 
   if (error) {
     return (
       <div className="flex min-h-screen items-center justify-center px-4">
         <div className="max-w-md text-center">
-          <div className="mb-4 text-red-500">
+          <h2 className="mb-3 text-lg font-semibold">
             Authentication failed
-          </div>
+          </h2>
 
           <p className="text-sm text-muted-foreground">
             {error}
           </p>
 
           <p className="mt-4 text-xs text-muted-foreground">
-            Redirecting you back to login...
+            Redirecting to login...
           </p>
         </div>
       </div>
@@ -282,7 +263,7 @@ const OAuthCallback = () => {
   }
 
   // ==========================================================
-  // LOADING UI
+  // LOADING
   // ==========================================================
 
   return (
