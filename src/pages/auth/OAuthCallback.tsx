@@ -1,325 +1,117 @@
-import { useEffect, useState } from "react";
-import {
-  useNavigate,
-  useSearchParams,
-} from "react-router-dom";
 
-const API_URL =
-  import.meta.env.VITE_API_URL || "/api/v1";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
+
+import { useAppDispatch } from "@/hooks/redux";
+import { setCredentials, type User } from "@/features/auth/authSlice";
+import API from "@/api/auth.api";
+
+const CHECKOUT_PATH = "/dashboard/checkout";
+const AUTH_REDIRECT_KEY = "edumaster_auth_redirect";
 
 const OAuthCallback = () => {
-  const [params] = useSearchParams();
   const navigate = useNavigate();
-
+  const dispatch = useAppDispatch();
   const [error, setError] = useState("");
 
   useEffect(() => {
+    let active = true;
+
     const authenticateUser = async () => {
       try {
-        /*
-        |--------------------------------------------------------------------------
-        | GOOGLE OAUTH CALLBACK
-        |--------------------------------------------------------------------------
-        */
+        // Read the saved destination before completing OAuth.
+        const savedDestination = sessionStorage.getItem(AUTH_REDIRECT_KEY);
 
-        const roleFromUrl = params.get("role");
+        // Only honor known, internal destinations.
+        const redirectToCheckout =
+          savedDestination === CHECKOUT_PATH;
 
-        /*
-        |--------------------------------------------------------------------------
-        | GET AUTHENTICATED USER
-        |--------------------------------------------------------------------------
-        |
-        | We do NOT trust the role in the URL for authentication.
-        |
-        | The backend has already placed the JWT inside the
-        | httpOnly accessToken cookie.
-        |
-        | /users/me reads that cookie and returns the actual
-        | authenticated user.
-        |
-        */
+        // Retrieve the authenticated user using the OAuth cookie.
+        const response = await API.get("/users/me");
 
-        const response = await fetch(
-          `${API_URL}/users/me`,
-          {
-            method: "GET",
+        const result = response.data;
 
-            /*
-             * Allows the browser to send the
-             * httpOnly authentication cookie.
-             */
-            credentials: "include",
+        const user = (
+          result?.data?.user ??
+          result?.data ??
+          result?.user
+        ) as User | undefined;
 
-            headers: {
-              Accept: "application/json",
-            },
-          }
-        );
-
-        /*
-        |--------------------------------------------------------------------------
-        | READ RESPONSE
-        |--------------------------------------------------------------------------
-        */
-
-        const responseText =
-          await response.text();
-
-        /*
-        |--------------------------------------------------------------------------
-        | CHECK RESPONSE
-        |--------------------------------------------------------------------------
-        */
-
-        if (!response.ok) {
+        if (!user || !user.role) {
           throw new Error(
-            `Authentication failed (${response.status}): ${responseText}`
+            "The server did not return an authenticated user."
           );
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | PARSE JSON
-        |--------------------------------------------------------------------------
-        */
+        if (!active) return;
 
-        let result: unknown;
+        const token =
+          result?.data?.token ??
+          result?.token ??
+          result?.accessToken ??
+          null;
 
-        try {
-          result =
-            JSON.parse(responseText);
-        } catch {
-          throw new Error(
-            "Invalid JSON returned by /users/me"
-          );
-        }
+        dispatch(setCredentials({ user, token }));
 
-        /*
-        |--------------------------------------------------------------------------
-        | GET USER FROM RESPONSE
-        |--------------------------------------------------------------------------
-        |
-        | Depending on your controller response structure,
-        | the user could be located in:
-        |
-        | data.user
-        | data
-        | user
-        |
-        */
+        const role = user.role.toLowerCase();
 
-        const responseData =
-          result as {
-            data?: {
-              user?: {
-                role?: string;
-                email?: string;
-                _id?: string;
-                id?: string;
-              };
-              role?: string;
-              email?: string;
-              _id?: string;
-              id?: string;
-            };
-            user?: {
-              role?: string;
-              email?: string;
-              _id?: string;
-              id?: string;
-            };
-          };
-
-        const user =
-          responseData?.data?.user ||
-          responseData?.data ||
-          responseData?.user;
-
-        /*
-        |--------------------------------------------------------------------------
-        | CHECK USER
-        |--------------------------------------------------------------------------
-        */
-
-        if (!user) {
-          throw new Error(
-            "User information was not returned by the server."
-          );
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | DETERMINE AUTHENTICATED ROLE
-        |--------------------------------------------------------------------------
-        |
-        | IMPORTANT:
-        |
-        | We use user.role returned by the backend.
-        |
-        | The role query parameter is only a fallback.
-        |
-        */
-
-        const authenticatedRole = (
-          user.role ||
-          roleFromUrl ||
-          ""
-        )
-          .toString()
-          .trim()
-          .toLowerCase();
-
-        /*
-        |--------------------------------------------------------------------------
-        | STUDENT
-        |--------------------------------------------------------------------------
-        */
-
-        if (
-          authenticatedRole ===
-          "student"
-        ) {
-          navigate(
-            "/dashboard/student",
-            {
-              replace: true,
-            }
-          );
-
+        // Preserve the checkout destination for students who
+        // started authentication from the cart.
+        if (redirectToCheckout && role === "student") {
+          sessionStorage.removeItem(AUTH_REDIRECT_KEY);
+          navigate(CHECKOUT_PATH, { replace: true });
           return;
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | ADMIN
-        |--------------------------------------------------------------------------
-        */
+        // Checkout is only available to students.
+        // Other roles continue to their normal dashboards.
+        sessionStorage.removeItem(AUTH_REDIRECT_KEY);
 
-        if (
-          authenticatedRole ===
-          "admin"
-        ) {
-          navigate(
-            "/admin",
-            {
-              replace: true,
-            }
-          );
-
-          return;
+        if (role === "student") {
+          navigate("/dashboard/student", { replace: true });
+        } else if (role === "admin") {
+          navigate("/admin", { replace: true });
+        } else if (role === "instructor") {
+          navigate("/instructor/dashboard", { replace: true });
+        } else {
+          throw new Error("Your account has an unrecognized role.");
         }
-
-        /*
-        |--------------------------------------------------------------------------
-        | INSTRUCTOR
-        |--------------------------------------------------------------------------
-        */
-
-        if (
-          authenticatedRole ===
-          "instructor"
-        ) {
-          navigate(
-            "/instructor/dashboard",
-            {
-              replace: true,
-            }
-          );
-
-          return;
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | UNKNOWN ROLE
-        |--------------------------------------------------------------------------
-        */
-
-        throw new Error(
-          `Unknown user role: ${
-            user.role || "missing"
-          }`
-        );
       } catch (err) {
-        /*
-        |--------------------------------------------------------------------------
-        | ERROR HANDLING
-        |--------------------------------------------------------------------------
-        */
+        if (!active) return;
 
-        const message =
-          err instanceof Error
-            ? err.message
-            : "Google authentication failed.";
-
-        setError(message);
-
-        /*
-        |--------------------------------------------------------------------------
-        | REDIRECT TO LOGIN
-        |--------------------------------------------------------------------------
-        */
-
-        setTimeout(() => {
-          navigate(
-            "/login?error=oauth_failed",
-            {
-              replace: true,
-            }
-          );
-        }, 3000);
+        console.error("OAuth callback failed:", err);
+        setError("Unable to complete login. Please try again.");
+        toast.error("Google login failed. Please try again.");
       }
     };
 
-    authenticateUser();
-  }, [navigate, params]);
+    void authenticateUser();
 
-  /*
-  |--------------------------------------------------------------------------
-  | ERROR UI
-  |--------------------------------------------------------------------------
-  */
-
-  if (error) {
-    return (
-      <div className="flex min-h-screen items-center justify-center px-4">
-        <div className="w-full max-w-md text-center">
-          <h2 className="mb-3 text-lg font-semibold">
-            Authentication failed
-          </h2>
-
-          <p className="text-sm text-muted-foreground break-words">
-            {error}
-          </p>
-
-          <p className="mt-4 text-xs text-muted-foreground">
-            Redirecting to login...
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  /*
-  |--------------------------------------------------------------------------
-  | LOADING UI
-  |--------------------------------------------------------------------------
-  */
+    return () => {
+      active = false;
+    };
+  }, [dispatch, navigate]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center">
-      <div className="text-center">
-        <div className="mb-4">
-          <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-gray-300 border-t-primary" />
-        </div>
-
-        <p className="text-sm text-muted-foreground">
-          Logging you in...
-        </p>
-
-        <p className="mt-2 text-xs text-muted-foreground">
-          Please wait while we verify your account.
-        </p>
+    <div className="flex min-h-[60vh] items-center justify-center">
+      <div className="space-y-3 text-center">
+        {error ? (
+          <>
+            <p className="text-destructive">{error}</p>
+            <button
+              onClick={() => navigate("/login", { replace: true })}
+              className="text-primary underline"
+            >
+              Return to login
+            </button>
+          </>
+        ) : (
+          <>
+            <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-muted border-t-primary" />
+            <p>Completing your login...</p>
+          </>
+        )}
       </div>
     </div>
   );

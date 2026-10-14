@@ -1,5 +1,5 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { Providers } from "./providers";
+
+import { Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "./components/ui/sonner";
 
 // =========================
@@ -9,6 +9,7 @@ import PublicLayout from "./layouts/PublicLayout";
 import AuthLayout from "./layouts/AuthLayout";
 import DashboardLayout from "./layouts/DashboardLayout";
 import InstructorLayout from "./layouts/InstructorLayout";
+import AdminLayout from "./layouts/AdminLayout";
 
 // =========================
 // PUBLIC PAGES
@@ -42,12 +43,14 @@ import RoleRoute from "./auth/RoleRoute";
 // =========================
 import StudentDashboard from "./pages/student/Dashboard";
 import MyCourses from "./pages/student/MyCoursesPage";
+import OrderHistoryPage from "./pages/student/OrderHistoryPage";
 import Progress from "./pages/student/ProgressPage";
 import Certificates from "./pages/student/CertificatesPage";
 import StudentSettings from "./pages/student/SettingsPage";
 import StudentProfilePage from "./pages/student/ProfilePage";
-import OrderHistoryPage from "./pages/student/OrderHistoryPage";
-
+import CheckoutPage from "./pages/student/CheckoutPage";
+import OrderDetailsPage from "./pages/student/OrderDetailsPage";
+import OrdersHistoryPage from "./pages/student/OrdersPage";
 // =========================
 // ADMIN PAGES
 // =========================
@@ -67,7 +70,7 @@ import ReportsPage from "@/pages/admin/ReportsPage";
 import AAnalyticsPage from "@/pages/admin/AnalyticsPage";
 import ProfilePage from "@/pages/admin/ProfilePage";
 import SettingsPage from "@/pages/admin/SettingsPage";
-import AdminLayout from "@/layouts/AdminLayout";
+
 // =========================
 // INSTRUCTOR PAGES
 // =========================
@@ -84,373 +87,331 @@ import AssignmentsPage from "./pages/instructor/AssignmentsPage";
 import InstructorProfilePage from "./pages/instructor/ProfilePage";
 import InstructorSettingsPage from "./pages/instructor/SettingsPage";
 
+// =================
+// SUB ADMIN PAGES
+// =================
+
+import SubAdminLayout from "@/layouts/SubAdminLayout";
+import SubAdminDashboard from "@/pages/subadmin/SubAdminDashboard";
+import SubAdminNotImplementedPage from "@/pages/subadmin/SubAdminNotImplementedPage";
+import SubAdminStudentsPage from "@/pages/subadmin/SubAdminStudentsPage";
+import SubAdminInstructorsPage from "@/pages/subadmin/SubAdminInstructorsPage";
+import SubAdminCoursesPage from "@/pages/subadmin/SubAdminCoursesPage";
+import SubAdminReportsPage from "@/pages/subadmin/SubAdminReportsPage";
 
 function App() {
   return (
-    <Providers>
-      <BrowserRouter>
-        <Routes>
+    <>
+      <Routes>
+        {/* =====================================================
+            PUBLIC ROUTES
+        ====================================================== */}
+        <Route element={<PublicLayout />}>
+          <Route path="/" element={<HomePage />} />
 
-          {/* =====================================================
-              PUBLIC ROUTES
-          ====================================================== */}
-          <Route element={<PublicLayout />}>
+          <Route path="/courses" element={<CoursesPage />} />
 
-            <Route
-              path="/"
-              element={<HomePage />}
-            />
-
-            <Route
-              path="/courses"
-              element={<CoursesPage />}
-            />
-
-            <Route
-              path="/courses/:id"
-              element={<CourseDetailsPage />}
-            />
-
-            <Route
-              path="/about"
-              element={<AboutPage />}
-            />
-
-            <Route
-              path="/pricing"
-              element={<PricingPage />}
-            />
-
-            <Route
-              path="/blog"
-              element={<BlogPage />}
-            />
-
-            <Route
-              path="/contact"
-              element={<ContactPage />}
-            />
-
-            <Route
-              path="/faq"
-              element={<FAQPage />}
-            />
-
-          </Route>
-
-
-          {/* =====================================================
-              AUTH ROUTES
-          ====================================================== */}
-          <Route element={<AuthLayout />}>
-
-            <Route
-              path="/login"
-              element={<LoginPage />}
-            />
-
-            <Route
-              path="/register"
-              element={<RegisterPage />}
-            />
-
-            <Route
-              path="/verify-otp"
-              element={<OTPVerificationPage />}
-            />
-
-            <Route
-              path="/forgot-password"
-              element={<ForgotPasswordPage />}
-            />
-
-            <Route
-              path="/oauth-callback"
-              element={<OAuthCallback />}
-            />
-
-          </Route>
-
-
-          {/* =====================================================
-              STUDENT DASHBOARD
-          ====================================================== */}
           <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <RoleRoute allowedRoles={["Student"]}>
-                  <DashboardLayout />
-                </RoleRoute>
-              </ProtectedRoute>
-            }
-          >
-
-            {/* /dashboard → /dashboard/student */}
-            <Route
-              index
-              element={
-                <Navigate
-                  to="student"
-                  replace
-                />
-              }
-            />
-
-            {/* ================= STUDENT DASHBOARD ================= */}
-
-            <Route
-              path="student"
-              element={<StudentDashboard />}
-            />
-
-            {/* ================= MY COURSES ================= */}
-
-            <Route
-              path="courses"
-              element={<MyCourses />}
-            />
-
-            {/* ================= PROFILE ================= */}
-
-            <Route
-              path="profile"
-              element={<StudentProfilePage />}
-            />
-
-            {/* ================= ORDER HISTORY ================= */}
-
-            <Route
-              path="orders"
-              element={<OrderHistoryPage />}
-            />
-
-            {/* ================= PROGRESS ================= */}
-
-            <Route
-              path="progress"
-              element={<Progress />}
-            />
-
-            {/* ================= CERTIFICATES ================= */}
-
-            <Route
-              path="certificates"
-              element={<Certificates />}
-            />
-
-            {/* ================= SETTINGS ================= */}
-
-            <Route
-              path="settings"
-              element={<StudentSettings />}
-            />
-
-          </Route>
-
-
-          {/* =====================================================
-              ADMIN ROUTES
-          ====================================================== */}
-         <Route path="/admin" element={<AdminLayout />}>
-  <Route index element={<DashboardPage />} />
-
-  <Route path="users" element={<UsersPage />} />
-  <Route path="users/:id" element={<UserDetailsPage />} />
-
-  <Route path="instructors" element={<InstructorsPage />} />
-  <Route
-    path="instructors/:id"
-    element={<InstructorDetailsPage />}
-  />
-
-  <Route path="courses" element={<ACoursesPage />} />
-  <Route path="courses/:id" element={<ACourseDetailsPage />} />
-
-  <Route path="categories" element={<CategoriesPage />} />
-
-  <Route path="orders" element={<OrdersPage />} />
-  <Route path="payments" element={<PaymentsPage />} />
-
-  <Route path="reviews" element={<AReviewsPage />} />
-  <Route path="assignments" element={<AAssignmentsPage />} />
-
-  <Route path="reports" element={<ReportsPage />} />
-  <Route path="analytics" element={<AAnalyticsPage />} />
-
-  <Route path="profile" element={<ProfilePage />} />
-  <Route path="settings" element={<SettingsPage />} />
-</Route>
-
-
-          {/* =====================================================
-              INSTRUCTOR ROUTES
-          ====================================================== */}
-          <Route
-            path="/instructor"
-            element={
-              <ProtectedRoute>
-                <RoleRoute allowedRoles={["Instructor"]}>
-                  <InstructorLayout />
-                </RoleRoute>
-              </ProtectedRoute>
-            }
-          >
-
-            {/* /instructor → /instructor/dashboard */}
-            <Route
-              index
-              element={
-                <Navigate
-                  to="dashboard"
-                  replace
-                />
-              }
-            />
-
-
-            {/* =========================
-                DASHBOARD
-            ========================== */}
-
-            <Route
-              path="dashboard"
-              element={<InstructorDashboard />}
-            />
-
-
-            {/* =========================
-                COURSES
-            ========================== */}
-
-            <Route
-              path="courses"
-              element={<InstructorCoursesPage />}
-            />
-
-
-            {/* =========================
-                CREATE COURSE
-            ========================== */}
-
-            <Route
-              path="courses/create"
-              element={<CreateCoursePage />}
-            />
-
-
-            {/* =========================
-                EDIT COURSE
-            ========================== */}
-
-            <Route
-              path="courses/:id/edit"
-              element={<EditCoursePage />}
-            />
-
-
-            {/* =========================
-                STUDENTS
-            ========================== */}
-
-            <Route
-              path="students"
-              element={<InstructorStudentsPage />}
-            />
-
-
-            {/* =========================
-                STUDENT PROFILE
-            ========================== */}
-
-            <Route
-              path="students/:id"
-              element={<InstructorStudentProfilePage />}
-            />
-
-
-            {/* =========================
-                REVENUE
-            ========================== */}
-
-            <Route
-              path="revenue"
-              element={<RevenuePage />}
-            />
-
-
-            {/* =========================
-                REVIEWS
-            ========================== */}
-
-            <Route
-              path="reviews"
-              element={<ReviewsPage />}
-            />
-
-
-            {/* =========================
-                ANALYTICS
-            ========================== */}
-
-            <Route
-              path="analytics"
-              element={<AnalyticsPage />}
-            />
-
-
-            {/* =========================
-                ASSIGNMENTS
-            ========================== */}
-
-            <Route
-              path="assignments"
-              element={<AssignmentsPage />}
-            />
-
-
-            {/* =========================
-                PROFILE
-            ========================== */}
-
-            <Route
-              path="profile"
-              element={<InstructorProfilePage />}
-            />
-
-
-            {/* =========================
-                SETTINGS
-            ========================== */}
-
-            <Route
-              path="settings"
-              element={<InstructorSettingsPage />}
-            />
-
-          </Route>
-
-
-          {/* =====================================================
-              FALLBACK
-          ====================================================== */}
-          <Route
-            path="*"
-            element={
-              <Navigate
-                to="/"
-                replace
-              />
-            }
+            path="/courses/:id"
+            element={<CourseDetailsPage />}
           />
 
-        </Routes>
+          <Route path="/about" element={<AboutPage />} />
 
-        {/* TOASTER */}
-        <Toaster />
+          <Route path="/pricing" element={<PricingPage />} />
 
-      </BrowserRouter>
-    </Providers>
+          <Route path="/blog" element={<BlogPage />} />
+
+          <Route path="/contact" element={<ContactPage />} />
+
+          <Route path="/faq" element={<FAQPage />} />
+        </Route>
+
+        {/* =====================================================
+            AUTH ROUTES
+        ====================================================== */}
+        <Route element={<AuthLayout />}>
+          <Route path="/login" element={<LoginPage />} />
+
+          <Route path="/register" element={<RegisterPage />} />
+
+          <Route
+            path="/verify-otp"
+            element={<OTPVerificationPage />}
+          />
+
+          <Route
+            path="/forgot-password"
+            element={<ForgotPasswordPage />}
+          />
+
+          <Route
+            path="/oauth-callback"
+            element={<OAuthCallback />}
+          />
+        </Route>
+
+      {/* =====================================================
+            SUBADMIN DASHBOARD
+        ====================================================== */}    
+        
+   <Route path="/sub-admin" element={<SubAdminLayout />}>
+  <Route index element={<Navigate to="dashboard" replace />} />
+
+  <Route path="dashboard" element={<SubAdminDashboard />} />
+
+  <Route path="students" element={<SubAdminStudentsPage />} />
+  <Route path="instructors" element={<SubAdminInstructorsPage />} />
+  <Route path="courses" element={<SubAdminCoursesPage />} />
+  <Route path="reports" element={<SubAdminReportsPage />} />
+
+  <Route path="categories" element={<SubAdminNotImplementedPage />} />
+  <Route path="orders" element={<SubAdminNotImplementedPage />} />
+  <Route path="payments" element={<SubAdminNotImplementedPage />} />
+  <Route path="reviews" element={<SubAdminNotImplementedPage />} />
+  <Route path="assignments" element={<SubAdminNotImplementedPage />} />
+  <Route path="analytics" element={<SubAdminNotImplementedPage />} />
+  <Route path="profile" element={<SubAdminNotImplementedPage />} />
+</Route>
+        {/* =====================================================
+            STUDENT DASHBOARD
+        ====================================================== */}
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <RoleRoute allowedRoles={["Student"]}>
+                <DashboardLayout />
+              </RoleRoute>
+            </ProtectedRoute>
+          }
+        >
+          {/* /dashboard -> /dashboard/student */}
+          <Route
+            index
+            element={<Navigate to="student" replace />}
+          />
+
+          {/* STUDENT DASHBOARD */}
+          <Route
+            path="student"
+            element={<StudentDashboard />}
+          />
+
+          {/* MY COURSES */}
+          <Route path="courses" element={<MyCourses />} />
+            <Route
+            path="checkout"
+            element={<CheckoutPage />}
+          />
+
+          {/* ORDER HISTORY */}
+          <Route path="orders" element={<OrdersHistoryPage />} />
+
+          {/* INDIVIDUAL ORDER DETAILS */}
+          <Route
+            path="orders/:id"
+            element={<OrderDetailsPage />}
+          />
+          {/* PROFILE */}
+          <Route
+            path="profile"
+            element={<StudentProfilePage />}
+          />
+
+          {/* ORDER HISTORY */}
+          <Route
+            path="orders"
+            element={<OrderHistoryPage />}
+          />
+
+          {/* PROGRESS */}
+          <Route path="progress" element={<Progress />} />
+
+          {/* CERTIFICATES */}
+          <Route
+            path="certificates"
+            element={<Certificates />}
+          />
+
+          {/* SETTINGS */}
+          <Route
+            path="settings"
+            element={<StudentSettings />}
+          />
+        </Route>
+
+        {/* =====================================================
+            ADMIN ROUTES
+        ====================================================== */}
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute>
+              <RoleRoute allowedRoles={["Admin"]}>
+                <AdminLayout />
+              </RoleRoute>
+            </ProtectedRoute>
+          }
+        >
+          {/* ADMIN DASHBOARD */}
+          <Route index element={<DashboardPage />} />
+
+          {/* USERS */}
+          <Route path="users" element={<UsersPage />} />
+
+          <Route
+            path="users/:id"
+            element={<UserDetailsPage />}
+          />
+
+          {/* INSTRUCTORS */}
+          <Route
+            path="instructors"
+            element={<InstructorsPage />}
+          />
+
+          <Route
+            path="instructors/:id"
+            element={<InstructorDetailsPage />}
+          />
+
+          {/* COURSES */}
+          <Route path="courses" element={<ACoursesPage />} />
+
+          <Route
+            path="courses/:id"
+            element={<ACourseDetailsPage />}
+          />
+
+          {/* CATEGORIES */}
+          <Route
+            path="categories"
+            element={<CategoriesPage />}
+          />
+
+          {/* ORDERS AND PAYMENTS */}
+          <Route path="orders" element={<OrdersPage />} />
+
+          <Route path="payments" element={<PaymentsPage />} />
+
+          {/* REVIEWS AND ASSIGNMENTS */}
+          <Route path="reviews" element={<AReviewsPage />} />
+
+          <Route
+            path="assignments"
+            element={<AAssignmentsPage />}
+          />
+
+          {/* REPORTS AND ANALYTICS */}
+          <Route path="reports" element={<ReportsPage />} />
+
+          <Route
+            path="analytics"
+            element={<AAnalyticsPage />}
+          />
+
+          {/* PROFILE AND SETTINGS */}
+          <Route path="profile" element={<ProfilePage />} />
+
+          <Route path="settings" element={<SettingsPage />} />
+        </Route>
+
+        {/* =====================================================
+            INSTRUCTOR ROUTES
+        ====================================================== */}
+        <Route
+          path="/instructor"
+          element={
+            <ProtectedRoute>
+              <RoleRoute allowedRoles={["Instructor"]}>
+                <InstructorLayout />
+              </RoleRoute>
+            </ProtectedRoute>
+          }
+        >
+          {/* /instructor -> /instructor/dashboard */}
+          <Route
+            index
+            element={<Navigate to="dashboard" replace />}
+          />
+
+          {/* DASHBOARD */}
+          <Route
+            path="dashboard"
+            element={<InstructorDashboard />}
+          />
+
+          {/* COURSES */}
+          <Route
+            path="courses"
+            element={<InstructorCoursesPage />}
+          />
+
+          {/* CREATE COURSE */}
+          <Route
+            path="courses/create"
+            element={<CreateCoursePage />}
+          />
+
+          {/* EDIT COURSE */}
+          <Route
+            path="courses/:id/edit"
+            element={<EditCoursePage />}
+          />
+
+          {/* STUDENTS */}
+          <Route
+            path="students"
+            element={<InstructorStudentsPage />}
+          />
+
+          {/* STUDENT PROFILE */}
+          <Route
+            path="students/:id"
+            element={<InstructorStudentProfilePage />}
+          />
+
+          {/* REVENUE */}
+          <Route path="revenue" element={<RevenuePage />} />
+
+          {/* REVIEWS */}
+          <Route path="reviews" element={<ReviewsPage />} />
+
+          {/* ANALYTICS */}
+          <Route path="analytics" element={<AnalyticsPage />} />
+
+          {/* ASSIGNMENTS */}
+          <Route
+            path="assignments"
+            element={<AssignmentsPage />}
+          />
+
+          {/* PROFILE */}
+          <Route
+            path="profile"
+            element={<InstructorProfilePage />}
+          />
+
+          {/* SETTINGS */}
+          <Route
+            path="settings"
+            element={<InstructorSettingsPage />}
+          />
+        </Route>
+
+        {/* =====================================================
+            FALLBACK
+        ====================================================== */}
+        <Route
+          path="*"
+          element={<Navigate to="/" replace />}
+        />
+      </Routes>
+
+      {/* TOASTER */}
+      <Toaster />
+    </>
   );
 }
 
