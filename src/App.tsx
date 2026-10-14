@@ -54,6 +54,7 @@ import OrdersHistoryPage from "./pages/student/OrdersPage";
 // =========================
 // ADMIN PAGES
 // =========================
+import AdminSubAdminsPage from "@/pages/admin/AdminSubAdminsPage";
 import DashboardPage from "@/pages/admin/DashboardPage";
 import UsersPage from "@/pages/admin/UsersPage";
 import UserDetailsPage from "@/pages/admin/UserDetailsPage";
@@ -256,7 +257,10 @@ function App() {
         >
           {/* ADMIN DASHBOARD */}
           <Route index element={<DashboardPage />} />
-
+          <Route
+  path="sub-admins"
+  element={<AdminSubAdminsPage />}
+/>
           {/* USERS */}
           <Route path="users" element={<UsersPage />} />
 

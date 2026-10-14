@@ -1,3 +1,4 @@
+
 import {
   LayoutDashboard,
   Users,
@@ -16,6 +17,7 @@ import {
   GraduationCap,
   X,
 } from "lucide-react";
+
 import { NavLink, useNavigate } from "react-router-dom";
 
 import { useAppDispatch, useAppSelector } from "@/hooks/redux";
@@ -26,7 +28,16 @@ type Props = {
   closeMenu?: () => void;
 };
 
-const AdminSidebar = ({ mobile = false, closeMenu }: Props) => {
+type NavigationItem = {
+  label: string;
+  path: string;
+  icon: typeof LayoutDashboard;
+};
+
+const AdminSidebar = ({
+  mobile = false,
+  closeMenu,
+}: Props) => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
 
@@ -40,7 +51,7 @@ const AdminSidebar = ({ mobile = false, closeMenu }: Props) => {
       .toUpperCase()
       .trim() || "A";
 
-  const navigationItems = [
+  const navigationItems: NavigationItem[] = [
     {
       label: "Dashboard",
       path: "/admin/",
@@ -50,6 +61,11 @@ const AdminSidebar = ({ mobile = false, closeMenu }: Props) => {
       label: "Users",
       path: "/admin/users",
       icon: Users,
+    },
+    {
+      label: "SubAdmins",
+      path: "/admin/sub-admins",
+      icon: UserCog,
     },
     {
       label: "Instructors",
@@ -98,7 +114,7 @@ const AdminSidebar = ({ mobile = false, closeMenu }: Props) => {
     },
   ];
 
-  const accountItems = [
+  const accountItems: NavigationItem[] = [
     {
       label: "Profile",
       path: "/admin/profile",
@@ -130,19 +146,16 @@ const AdminSidebar = ({ mobile = false, closeMenu }: Props) => {
   };
 
   const renderNavItem = (
-    item: {
-      label: string;
-      path: string;
-      icon: React.ElementType;
-    },
-    index?: number
+    item: NavigationItem,
+    index: number,
   ) => {
     const Icon = item.icon;
 
     return (
       <NavLink
-        key={`${item.path}-${index ?? item.label}`}
+        key={`${item.path}-${index}`}
         to={item.path}
+        end={item.path === "/admin/"}
         onClick={() => {
           if (mobile && closeMenu) {
             closeMenu();
@@ -184,9 +197,7 @@ const AdminSidebar = ({ mobile = false, closeMenu }: Props) => {
         ${mobile ? "h-full" : ""}
       `}
     >
-      {/* =========================
-          HEADER / LOGO
-      ========================== */}
+      {/* HEADER / LOGO */}
       <div className="flex h-16 shrink-0 items-center justify-between border-b px-5">
         <button
           type="button"
@@ -227,9 +238,7 @@ const AdminSidebar = ({ mobile = false, closeMenu }: Props) => {
         )}
       </div>
 
-      {/* =========================
-          ADMIN PROFILE
-      ========================== */}
+      {/* ADMIN PROFILE */}
       <div className="border-b px-4 py-4">
         <button
           type="button"
@@ -264,9 +273,7 @@ const AdminSidebar = ({ mobile = false, closeMenu }: Props) => {
         </button>
       </div>
 
-      {/* =========================
-          NAVIGATION
-      ========================== */}
+      {/* NAVIGATION */}
       <div className="flex-1 overflow-y-auto px-4 py-5">
         <div className="mb-3 px-2">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
@@ -276,11 +283,11 @@ const AdminSidebar = ({ mobile = false, closeMenu }: Props) => {
 
         <nav className="space-y-1">
           {navigationItems.map((item, index) =>
-            renderNavItem(item, index)
+            renderNavItem(item, index),
           )}
         </nav>
 
-        {/* Account */}
+        {/* ACCOUNT */}
         <div className="mb-3 mt-7 px-2">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
             Account
@@ -289,14 +296,12 @@ const AdminSidebar = ({ mobile = false, closeMenu }: Props) => {
 
         <nav className="space-y-1">
           {accountItems.map((item, index) =>
-            renderNavItem(item, index)
+            renderNavItem(item, index),
           )}
         </nav>
       </div>
 
-      {/* =========================
-          LOGOUT
-      ========================== */}
+      {/* LOGOUT */}
       <div className="shrink-0 border-t p-4">
         <button
           type="button"
