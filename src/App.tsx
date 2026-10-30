@@ -54,6 +54,8 @@ import OrdersHistoryPage from "./pages/student/OrdersPage";
 // =========================
 // ADMIN PAGES
 // =========================
+import AssignmentDetailsPage from "@/pages/admin/AssignmentDetailsPage";
+import AssignmentFormPage from "@/pages/admin/AssignmentFormPage";
 import AdminSubAdminsPage from "@/pages/admin/AdminSubAdminsPage";
 import DashboardPage from "@/pages/admin/DashboardPage";
 import UsersPage from "@/pages/admin/UsersPage";
@@ -302,10 +304,26 @@ function App() {
           {/* REVIEWS AND ASSIGNMENTS */}
           <Route path="reviews" element={<AReviewsPage />} />
 
-          <Route
-            path="assignments"
-            element={<AAssignmentsPage />}
-          />
+        {/* ASSIGNMENTS */}
+<Route
+  path="assignments"
+  element={<AAssignmentsPage />}
+/>
+
+<Route
+  path="assignments/new"
+  element={<AssignmentFormPage />}
+/>
+
+<Route
+  path="assignments/:id/edit"
+  element={<AssignmentFormPage />}
+/>
+
+<Route
+  path="assignments/:id"
+  element={<AssignmentDetailsPage />}
+/>
 
           {/* REPORTS AND ANALYTICS */}
           <Route path="reports" element={<ReportsPage />} />

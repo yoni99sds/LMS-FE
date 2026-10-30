@@ -1,153 +1,90 @@
+
 import {
   useEffect,
   useState,
   type ReactNode,
 } from "react";
 import { Navigate } from "react-router-dom";
-import { useAppSelector } from "@/hooks/redux";
+import { useAppDispatch } from "@/hooks/redux";
+import API from "@/api/auth.api";
+import {
+  logout as clearAuthSession,
+  restoreUser,
+  type User,
+} from "@/features/auth/authSlice";
 
 interface ProtectedRouteProps {
   children: ReactNode;
 }
 
-const API_URL =
-  import.meta.env.VITE_API_URL || "/api/v1";
-
 const ProtectedRoute = ({
   children,
 }: ProtectedRouteProps) => {
-  const { user } = useAppSelector(
-    (state) => state.auth
-  );
+  const dispatch = useAppDispatch();
 
-  const [checkingAuth, setCheckingAuth] =
-    useState(true);
-
-  const [authenticated, setAuthenticated] =
-    useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
+  const [authenticated, setAuthenticated] = useState(false);
 
   useEffect(() => {
     let mounted = true;
 
-    const checkAuthentication =
-      async () => {
-        try {
-          /*
-          |--------------------------------------------------------------------------
-          | If Redux already has the user
-          |--------------------------------------------------------------------------
-          */
+    const checkAuthentication = async () => {
+      setCheckingAuth(true);
 
-          if (user) {
-            console.log(
-              "✅ ProtectedRoute: User already exists in Redux"
-            );
+      try {
+        // Verify the HTTP-only access-token cookie with the backend.
+        const response = await API.get("/users/me");
 
-            if (mounted) {
-              setAuthenticated(true);
-              setCheckingAuth(false);
-            }
+        const result = response.data;
 
-            return;
-          }
+        const currentUser =
+          result?.data?.user ??
+          result?.data ??
+          result?.user;
 
-          /*
-          |--------------------------------------------------------------------------
-          | Check authentication using httpOnly cookie
-          |--------------------------------------------------------------------------
-          */
-
-          console.log(
-            "🔐 ProtectedRoute: Checking authentication..."
+        if (
+          !currentUser ||
+          typeof currentUser.email !== "string" ||
+          typeof currentUser.role !== "string"
+        ) {
+          throw new Error(
+            "The server did not return a valid authenticated user."
           );
-
-          const response =
-            await fetch(
-              `${API_URL}/users/me`,
-              {
-                method: "GET",
-
-                /*
-                 * IMPORTANT:
-                 * Sends the httpOnly accessToken cookie.
-                 */
-                credentials: "include",
-
-                headers: {
-                  Accept:
-                    "application/json",
-                },
-              }
-            );
-
-          console.log(
-            "📡 ProtectedRoute /users/me:",
-            response.status
-          );
-
-          if (!response.ok) {
-            throw new Error(
-              "User is not authenticated"
-            );
-          }
-
-          const result =
-            await response.json();
-
-          const currentUser =
-            result?.data?.user ||
-            result?.data ||
-            result?.user;
-
-          if (!currentUser) {
-            throw new Error(
-              "Authenticated user was not returned"
-            );
-          }
-
-          console.log(
-            "✅ ProtectedRoute: Authenticated user:",
-            currentUser
-          );
-
-          if (mounted) {
-            setAuthenticated(true);
-            setCheckingAuth(false);
-          }
-        } catch (error) {
-          console.error(
-            "❌ ProtectedRoute authentication failed:",
-            error
-          );
-
-          if (mounted) {
-            setAuthenticated(false);
-            setCheckingAuth(false);
-          }
         }
-      };
 
-    checkAuthentication();
+        if (mounted) {
+          dispatch(restoreUser(currentUser as User));
+          setAuthenticated(true);
+        }
+      } catch (error) {
+        console.warn(
+          "Protected route: session verification failed.",
+          error
+        );
+
+        if (mounted) {
+          dispatch(clearAuthSession());
+          setAuthenticated(false);
+        }
+      } finally {
+        if (mounted) {
+          setCheckingAuth(false);
+        }
+      }
+    };
+
+    void checkAuthentication();
 
     return () => {
       mounted = false;
     };
-  }, [user]);
-
-  /*
-  |--------------------------------------------------------------------------
-  | Loading
-  |--------------------------------------------------------------------------
-  */
+  }, [dispatch]);
 
   if (checkingAuth) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
-          <div className="mb-4">
-            <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-gray-300 border-t-primary" />
-          </div>
-
+          <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-gray-300 border-t-primary" />
           <p className="text-sm text-muted-foreground">
             Checking authentication...
           </p>
@@ -156,28 +93,11 @@ const ProtectedRoute = ({
     );
   }
 
-  /*
-  |--------------------------------------------------------------------------
-  | Not authenticated
-  |--------------------------------------------------------------------------
-  */
-
-  if (!authenticated && !user) {
-    return (
-      <Navigate
-        to="/login"
-        replace
-      />
-    );
+  if (!authenticated) {
+    return <Navigate to="/login" replace />;
   }
 
-  /*
-  |--------------------------------------------------------------------------
-  | Authenticated
-  |--------------------------------------------------------------------------
-  */
-
-  return children;
+  return <>{children}</>;
 };
 
 export default ProtectedRoute;
